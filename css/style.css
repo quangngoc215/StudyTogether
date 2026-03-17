@@ -3202,3 +3202,23 @@ html {
         transform: translateY(0);
     }
 }
+/* Report Modal */
+#report-modal .modal-content {
+    max-width: 500px;
+}
+
+#report-modal textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+#report-modal .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.report-btn {
+    margin-left: 10px;
+}

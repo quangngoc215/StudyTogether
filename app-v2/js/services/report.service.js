@@ -1,70 +1,138 @@
 import { API_BASE } from "../config.js";
 
+/**
+ * Lấy token từ localStorage
+ * @returns {string|null}
+ */
 function getToken() {
-    return localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    if (!token) {
+        console.warn("No token found in localStorage");
+    }
+    return token;
 }
 
-const headers = () => ({
-    "Content-Type": "application/json",
-    "Authorization": "Bearer " + getToken()
-});
+/**
+ * Tạo headers với Authorization Bearer token
+ * @returns {Object}
+ */
+const headers = () => {
+    const token = getToken();
+    return {
+        "Content-Type": "application/json",
+        ...(token && { "Authorization": `Bearer ${token}` })
+    };
+};
 
-// Lấy danh sách báo cáo (có phân trang)
-export async function getReports(page = 1, limit = 10) {
-    const res = await fetch(`${API_BASE}/admin/reports?page=${page}&limit=${limit}`, {
-        headers: headers()
-    });
-    if (!res.ok) throw new Error("Không thể tải báo cáo");
+/**
+ * Xử lý response, ném lỗi nếu không OK
+ * @param {Response} res
+ * @returns {Promise<any>}
+ */
+async function handleResponse(res) {
+    if (!res.ok) {
+        let errorMsg = `Lỗi ${res.status}: ${res.statusText}`;
+        try {
+            const errorData = await res.json();
+            errorMsg = errorData.message || errorMsg;
+        } catch (e) {
+            // Không parse được JSON, giữ nguyên
+        }
+        throw new Error(errorMsg);
+    }
     return res.json();
 }
 
-// Lấy chi tiết một báo cáo
+// ==================== REPORTS ====================
+
+/**
+ * Lấy danh sách báo cáo (có phân trang và lọc theo status)
+ * @param {number} page - Số trang (bắt đầu từ 0)
+ * @param {number} size - Kích thước trang
+ * @param {string|null} status - Lọc theo trạng thái (PENDING, APPROVED, REJECTED)
+ * @returns {Promise<Object>}
+ */
+export async function getReports(page = 0, size = 10, status = null) {
+    let url = `${API_BASE}/admin/reports?page=${page}&size=${size}`;
+    if (status) {
+        url += `&status=${status}`;
+    }
+    const res = await fetch(url, { headers: headers() });
+    return handleResponse(res);
+}
+
+/**
+ * Lấy chi tiết một báo cáo theo ID
+ * @param {number} id
+ * @returns {Promise<Object>}
+ */
 export async function getReport(id) {
-    const res = await fetch(`${API_BASE}/admin/reports/${id}`, {
+    const res = await fetch(`${API_BASE}/admin/reports/${id}`, { headers: headers() });
+    return handleResponse(res);
+}
+
+/**
+ * Phê duyệt báo cáo (kèm ghi chú)
+ * @param {number} id
+ * @param {string} notes
+ * @returns {Promise<Object>}
+ */
+export async function approveReport(id, notes = '') {
+    const url = `${API_BASE}/admin/reports/${id}/approve?notes=${encodeURIComponent(notes)}`;
+    const res = await fetch(url, {
+        method: "PUT",
         headers: headers()
     });
-    if (!res.ok) throw new Error("Không thể tải chi tiết báo cáo");
-    return res.json();
+    return handleResponse(res);
 }
 
-// Phê duyệt báo cáo (có thể kèm nội dung chỉnh sửa bài viết)
-export async function approveReport(id, updatedPost) {
-    const res = await fetch(`${API_BASE}/admin/reports/${id}/approve`, {
+/**
+ * Từ chối báo cáo (kèm ghi chú)
+ * @param {number} id
+ * @param {string} notes
+ * @returns {Promise<Object>}
+ */
+export async function rejectReport(id, notes = '') {
+    const url = `${API_BASE}/admin/reports/${id}/reject?notes=${encodeURIComponent(notes)}`;
+    const res = await fetch(url, {
         method: "PUT",
-        headers: headers(),
-        body: JSON.stringify({ updatedPost })
+        headers: headers()
     });
-    if (!res.ok) throw new Error("Không thể phê duyệt báo cáo");
-    return res.json();
+    return handleResponse(res);
 }
 
-// Từ chối báo cáo (kèm lý do)
-export async function rejectReport(id, reason) {
-    const res = await fetch(`${API_BASE}/admin/reports/${id}/reject`, {
-        method: "PUT",
-        headers: headers(),
-        body: JSON.stringify({ reason })
-    });
-    if (!res.ok) throw new Error("Không thể từ chối báo cáo");
-    return res.json();
+/**
+ * Đếm số báo cáo đang chờ xử lý
+ * @returns {Promise<{pending: number}>}
+ */
+export async function countPendingReports() {
+    const res = await fetch(`${API_BASE}/admin/reports/count-pending`, { headers: headers() });
+    return handleResponse(res);
 }
 
-// Lấy chi tiết bài viết để chỉnh sửa
+// ==================== POSTS ====================
+
+/**
+ * Lấy chi tiết bài viết (dành cho admin)
+ * @param {number} id
+ * @returns {Promise<Object>}
+ */
 export async function getPost(id) {
-    const res = await fetch(`${API_BASE}/admin/posts/${id}`, {
-        headers: headers()
-    });
-    if (!res.ok) throw new Error("Không thể tải bài viết");
-    return res.json();
+    const res = await fetch(`${API_BASE}/admin/posts/${id}`, { headers: headers() });
+    return handleResponse(res);
 }
 
-// Cập nhật bài viết
+/**
+ * Cập nhật bài viết (admin)
+ * @param {number} id
+ * @param {Object} postData - Dữ liệu cập nhật (có thể bao gồm title, content, category, locked)
+ * @returns {Promise<Object>}
+ */
 export async function updatePost(id, postData) {
     const res = await fetch(`${API_BASE}/admin/posts/${id}`, {
         method: "PUT",
         headers: headers(),
         body: JSON.stringify(postData)
     });
-    if (!res.ok) throw new Error("Không thể cập nhật bài viết");
-    return res.json();
+    return handleResponse(res);
 }
