@@ -2,10 +2,8 @@
 import { 
     renderFeaturedContent, 
     renderActivities, 
-    renderForumPosts, 
     renderRankings,
     renderKnowledgeContent,
-    // renderQuizHistory, // Bỏ vì chuyển sang dùng API
 } from './ui.js';
 
 import { 
@@ -15,7 +13,7 @@ import {
     initQuiz,
     startQuiz,
     closeQuiz,
-    fetchAndRenderQuizHistory // Import hàm mới từ quiz.js
+    fetchAndRenderQuizHistory
 } from './quiz.js';
 
 import { 
@@ -25,11 +23,14 @@ import {
 } from './auth.js';
 
 import { initForgotPassword } from './forgotPassword.js';
-
 import { switchSection, initNavigation } from './navigation.js';
 import { appState, sampleData } from './data.js';
 import { loadPostDetail } from './postDetail.js';
 import { authService } from '../services/auth.service.js';
+
+// ========== IMPORT COMMUNITY MODULE ==========
+import { communityService } from '../services/community.service.js';
+import { loadCommunityPosts } from './community.js';
 
 // =============================
 // KIỂM TRA VÀ XỬ LÝ LOCALSTORAGE
@@ -156,12 +157,10 @@ function updateProfileUI() {
     }
 
     if (joinDateStat) {
-        // Có thể lấy từ user.createdAt nếu API trả về, tạm thời để mặc định
         joinDateStat.textContent = '2024';
     }
 
     if (activityStat) {
-        // Tạm thời dùng sampleData, sau này có thể gọi API
         activityStat.textContent = sampleData.quizHistory?.length || 0;
     }
 }
@@ -205,9 +204,9 @@ function openQuizSection() {
 }
 
 // =============================
-// XỬ LÝ TẠO BÀI VIẾT
+// XỬ LÝ TẠO BÀI VIẾT (CẬP NHẬT)
 // =============================
-function handleCreatePost(event) {
+async function handleCreatePost(event) {
     event.preventDefault();
 
     const user = authService.getCurrentUser();
@@ -236,35 +235,37 @@ function handleCreatePost(event) {
         return;
     }
 
-    const newPost = {
-        id: Date.now(),
-        author: user.username,
-        time: 'Vừa xong',
-        title: title,
-        content: content,
-        likes: 0,
-        comments: 0,
-        category: category
-    };
+    try {
+        console.log('🚀 Đang gửi yêu cầu tạo bài viết...');
+        // Thêm type 'community' vào request
+        const newPost = await communityService.createPost({
+            title,
+            content,
+            category,
+            type: 'community'  // Thêm dòng này để xác định bài viết thuộc cộng đồng
+        });
+        console.log('✅ Tạo bài viết thành công:', newPost);
 
-    if (!sampleData.forumPosts) {
-        sampleData.forumPosts = [];
-    }
-    
-    sampleData.forumPosts.unshift(newPost);
-    renderForumPosts();
+        toastr.success('✅ Đăng bài thành công!');
 
-    const modal = document.getElementById('createPostModal');
-    if (modal) {
-        modal.style.display = 'none';
-        modal.classList.remove('show');
+        // Đóng modal và reset form
+        const modal = document.getElementById('createPostModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+        }
+        const postForm = document.getElementById('postForm');
+        if (postForm) postForm.reset();
+
+        // Chuyển sang trang cộng đồng - hàm switchSection sẽ tự động gọi loadCommunityPosts
+        console.log('🔄 Chuyển đến community-section...');
+        switchSection('community-section');
+        // Không cần gọi loadCommunityPosts ở đây vì đã có trong navigation
+
+    } catch (error) {
+        console.error('❌ Lỗi khi tạo bài viết:', error);
+        toastr.error(error.message || 'Không thể đăng bài. Vui lòng thử lại sau.');
     }
-    
-    const postForm = document.getElementById('postForm');
-    if (postForm) postForm.reset();
-    
-    toastr.success('✅ Đăng bài thành công!');
-    switchSection('community-section');
 }
 
 // =============================
@@ -589,9 +590,8 @@ function initApp() {
         renderFeaturedContent();
         renderRankings('weekly');
         renderActivities();
-        renderForumPosts();
         renderKnowledgeContent();
-        // renderQuizHistory(); // Thay bằng API call nếu cần, nhưng tạm thời bỏ
+        // Không gọi renderForumPosts nữa vì đã dùng API
         updateStats();
         
         console.log('✅ Content rendered successfully');
@@ -609,6 +609,9 @@ function initApp() {
     initUserDropdown();
     initNavigation();
     initForgotPassword();
+
+    // Gán loadCommunityPosts vào window để sử dụng trong navigation.js và pagination
+    window.loadCommunityPosts = loadCommunityPosts;
 
     setTimeout(() => {
         initQuiz();

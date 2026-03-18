@@ -8,7 +8,7 @@ import { openAuthModal } from './auth.js';
    LOAD POST DETAIL (từ API)
 =================================*/
 export async function loadPostDetail(id) {
-    console.log('Loading post detail for ID:', id, 'Type:', typeof id);
+    console.log('📖 Loading post detail for ID:', id, 'Type:', typeof id);
 
     try {
         const post = await postService.getPostById(id);
@@ -17,12 +17,12 @@ export async function loadPostDetail(id) {
             return;
         }
 
-        console.log('Found post:', post.title);
+        console.log('✅ Found post:', post.title, 'type:', post.type);
         hideAllSections();
 
         const detailSection = document.getElementById('post-detail-section');
         if (!detailSection) {
-            console.error('post-detail-section not found');
+            console.error('❌ post-detail-section not found');
             return;
         }
 
@@ -30,7 +30,7 @@ export async function loadPostDetail(id) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         renderPostContent(post);
     } catch (error) {
-        console.error('Lỗi khi tải bài viết:', error);
+        console.error('❌ Lỗi khi tải bài viết:', error);
         toastr.error('Không thể tải nội dung bài viết.');
     }
 }
@@ -44,7 +44,7 @@ function renderPostContent(post) {
 
     const readingTime = calculateReadingTime(post.content || '');
     const date = post.createdAt ? new Date(post.createdAt).toLocaleDateString('vi-VN') : '';
-    const image = post.image || 'https://via.placeholder.com/800x400?text=No+Image';
+    const image = post.image || 'https://placehold.co/800x400?text=No+Image';
 
     container.innerHTML = `
         <article class="medium-article">
@@ -61,7 +61,7 @@ function renderPostContent(post) {
             </header>
             <div class="medium-cover">
                 <img src="${escapeHtml(image)}" alt="${escapeHtml(post.title)}" loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/800x400?text=No+Image'">
+                     onerror="this.src='https://placehold.co/800x400?text=No+Image'">
             </div>
             <div class="medium-content">
                 ${post.content || ''}
@@ -109,14 +109,12 @@ function setupReportButton(postId) {
    REPORT MODAL
 =================================*/
 function openReportModal(postId) {
-    // Kiểm tra đăng nhập
     if (!authService.isAuthenticated()) {
         toastr.warning('Vui lòng đăng nhập để báo cáo lỗi.');
         openAuthModal(true);
         return;
     }
 
-    // Tạo modal nếu chưa có
     let modal = document.getElementById('reportPostModal');
     if (!modal) {
         modal = document.createElement('div');
@@ -140,7 +138,6 @@ function openReportModal(postId) {
         `;
         document.body.appendChild(modal);
 
-        // Xử lý submit form
         const form = document.getElementById('reportPostForm');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -182,9 +179,18 @@ function openReportModal(postId) {
 function closePostDetail() {
     const detailSection = document.getElementById('post-detail-section');
     const knowledgeSection = document.getElementById('knowledge-section');
+    const communitySection = document.getElementById('community-section');
 
     if (detailSection) detailSection.classList.add('hidden-section');
-    if (knowledgeSection) knowledgeSection.classList.remove('hidden-section');
+    
+    // Quay lại section trước đó: nếu đang ở community thì quay lại community, nếu không thì về knowledge
+    if (communitySection && !communitySection.classList.contains('hidden-section')) {
+        // Nếu community đang hiện? không, vì detail đang hiện, nên các section khác ẩn
+        // Mặc định quay về knowledge (vì bài viết có thể từ cả hai nguồn)
+        if (knowledgeSection) knowledgeSection.classList.remove('hidden-section');
+    } else {
+        if (knowledgeSection) knowledgeSection.classList.remove('hidden-section');
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }

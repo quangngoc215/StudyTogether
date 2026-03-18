@@ -1,7 +1,7 @@
 // js/modules/ui.js
 import { loadPostDetail } from './postDetail.js';
 import { quizService } from '../services/quiz.service.js';
-import { postService } from '../services/post.service.js'; // Thêm import
+import { knowledgeService } from '../services/knowledge.service.js'; // Thay vì postService
 
 /* =====================================================
    UTIL RENDER
@@ -17,21 +17,17 @@ function renderList(containerId, data, templateFn, afterRender) {
    CONTENT CARD (từ PostDTO)
 =====================================================*/
 export function createContentCard(post) {
-    // Xử lý các trường có thể thiếu
     const image = post.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80';
-    // Tính thời gian đọc dựa trên độ dài content (khoảng 200 từ/phút)
     const wordCount = post.content ? post.content.split(/\s+/).length : 0;
     const readTime = Math.max(1, Math.ceil(wordCount / 200)) + ' phút đọc';
-    // Định dạng ngày từ createdAt
     const date = post.createdAt ? new Date(post.createdAt).toLocaleDateString('vi-VN') : '';
     const category = post.category || 'Kiến thức';
-    // Mô tả ngắn từ content
     const shortDesc = post.content ? post.content.substring(0, 120) + '...' : '';
 
     return `
         <div class="feature-card" data-id="${post.id}">
             <div class="feature-image">
-                <img src="${image}" alt="${post.title}" loading="lazy">
+                <img src="${image}" alt="${escapeHtml(post.title)}" loading="lazy">
             </div>
             <div class="feature-content">
                 <h3 class="card-title">${escapeHtml(post.title)}</h3>
@@ -49,7 +45,6 @@ export function createContentCard(post) {
     `;
 }
 
-// Hàm escape HTML để tránh XSS
 function escapeHtml(unsafe) {
     if (!unsafe) return '';
     return String(unsafe)
@@ -60,9 +55,6 @@ function escapeHtml(unsafe) {
         .replace(/'/g, "&#039;");
 }
 
-/* =====================================================
-   CLICK EVENT (giữ nguyên)
-=====================================================*/
 function enableContentCardClick(container) {
     if (!container) return;
     container.addEventListener('click', e => {
@@ -71,16 +63,12 @@ function enableContentCardClick(container) {
         if (!card) return;
         const id = card.dataset.id;
         if (!id) return;
-        console.log('Card clicked, ID from dataset:', id, typeof id);
         card.classList.add('card-clicked');
         setTimeout(() => card.classList.remove('card-clicked'), 150);
         loadPostDetail(id);
     });
 }
 
-/* =====================================================
-   ACTIVITY CARD (giữ nguyên)
-=====================================================*/
 export function createActivityCard(activity) {
     const isUpcoming = activity.status === 'Đã diễn ra';
     return `
@@ -113,9 +101,6 @@ export function createActivityCard(activity) {
     `;
 }
 
-/* =====================================================
-   FORUM POST (giữ nguyên)
-=====================================================*/
 export function createForumPost(post) {
     const categoryIcons = {
         study: 'fa-book',
@@ -167,16 +152,16 @@ export function createForumPost(post) {
 }
 
 /* =====================================================
-   RENDER FUNCTIONS (sử dụng API)
+   RENDER FUNCTIONS (sử dụng knowledgeService)
 =====================================================*/
 export async function renderFeaturedContent() {
     const container = document.getElementById('featured-content');
     if (!container) return;
-    // Hiển thị loading
     container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
     try {
-        const posts = await postService.getAllPosts();
-        const featured = posts.slice(0, 3); // lấy 3 bài đầu
+        // Lấy 3 bài viết kiến thức đầu tiên
+        const data = await knowledgeService.getKnowledgePosts(0, 3);
+        const featured = data.content || [];
         renderList('featured-content', featured, createContentCard, enableContentCardClick);
     } catch (error) {
         console.error('❌ Lỗi render featured content:', error);
@@ -184,13 +169,15 @@ export async function renderFeaturedContent() {
     }
 }
 
-export async function renderKnowledgeContent() {
+export async function renderKnowledgeContent(page = 0) {
     const container = document.getElementById('knowledge-content');
     if (!container) return;
     container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
     try {
-        const posts = await postService.getAllPosts();
+        const data = await knowledgeService.getKnowledgePosts(page, 10);
+        const posts = data.content || [];
         renderList('knowledge-content', posts, createContentCard, enableContentCardClick);
+        // Nếu cần phân trang, xử lở thêm
     } catch (error) {
         console.error('❌ Lỗi render knowledge content:', error);
         container.innerHTML = '<p class="empty-state">Không thể tải danh sách bài viết.</p>';
@@ -255,9 +242,6 @@ export async function renderRankings(type = 'weekly') {
     }
 }
 
-/* =====================================================
-   QUIZ HISTORY (tạm thời giữ sampleData, sau này có thể gọi API)
-=====================================================*/
 export function renderQuizHistory() {
     import('./data.js').then(module => {
         const container = document.getElementById('quiz-history');
@@ -292,9 +276,6 @@ export function renderQuizHistory() {
     });
 }
 
-/* =====================================================
-   COUNTER ANIMATION (giữ nguyên)
-=====================================================*/
 export function animateCounter(elementId, targetValue, duration = 2000) {
     const element = document.getElementById(elementId);
     if (!element) return;

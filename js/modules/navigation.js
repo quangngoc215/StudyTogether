@@ -2,10 +2,10 @@
 import {
     renderKnowledgeContent,
     renderActivities,
-    renderForumPosts,
     renderRankings
 } from './ui.js';
-import { fetchAndRenderQuizHistory } from './quiz.js'; // Import hàm mới
+import { fetchAndRenderQuizHistory } from './quiz.js';
+import { loadCommunityPosts } from './community.js';
 
 /* ==========================================
    CHUYỂN SECTION
@@ -41,39 +41,28 @@ export function switchSection(sectionId) {
     renderSectionContent(sectionId);
 }
 
-/* ==========================================
-   RENDER NỘI DUNG TỪNG SECTION
-========================================== */
 function renderSectionContent(sectionId) {
-
     switch (sectionId) {
-
         case 'knowledge-section':
             renderKnowledgeContent();
             break;
-
         case 'quiz-section':
-            fetchAndRenderQuizHistory(); // Gọi API để lấy lịch sử quiz
+            fetchAndRenderQuizHistory();
             break;
-
         case 'activities-section':
             renderActivities();
             break;
-
         case 'community-section':
-            renderForumPosts();
+            loadCommunityPosts(0); // Gọi API lấy bài viết cộng đồng
             break;
-
         case 'ranking-section':
             renderRankings('weekly');
             break;
-
         case 'profile-section':
             if (typeof window.updateProfileUI === 'function') {
                 window.updateProfileUI();
             }
             break;
-
         case 'home-section':
         default:
             // Không cần render lại
@@ -81,27 +70,16 @@ function renderSectionContent(sectionId) {
     }
 }
 
-/* ==========================================
-   INIT NAVIGATION
-========================================== */
 export function initNavigation() {
-
     console.log("Initializing navigation...");
-
     const navLinks = document.querySelectorAll('[data-section]');
-
     navLinks.forEach(link => {
-
         link.addEventListener('click', function (e) {
-
             e.preventDefault();
-
             const sectionName = this.dataset.section;
             if (!sectionName) return;
-
             const sectionId = sectionName + '-section';
             switchSection(sectionId);
         });
-
     });
 }
