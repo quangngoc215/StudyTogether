@@ -123,12 +123,16 @@ export async function getPost(id) {
 }
 
 /**
- * Cập nhật bài viết (admin)
+ * Cập nhật bài viết (admin) - có log token và URL
  * @param {number} id
  * @param {Object} postData - Dữ liệu cập nhật (có thể bao gồm title, content, category, locked)
  * @returns {Promise<Object>}
  */
 export async function updatePost(id, postData) {
+    const token = getToken();
+    console.log('Token for updatePost (first 10 chars):', token ? token.substring(0,10) + '...' : 'null');
+    console.log('URL:', `${API_BASE}/admin/posts/${id}`);
+    console.log('Payload:', postData);
     const res = await fetch(`${API_BASE}/admin/posts/${id}`, {
         method: "PUT",
         headers: headers(),
