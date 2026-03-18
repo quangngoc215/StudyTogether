@@ -24,14 +24,17 @@ export function renderAdminMenu() {
             <i class="fas fa-file-alt"></i> Quản lý Post
         </a>
 
+        <!-- Tạm thời vô hiệu nút Quản lý Quiz 
         <a href="#" data-page="quiz">
             <i class="fas fa-question-circle"></i> Quản lý Quiz
         </a>
-
+        -->
+        <!-- Tạm thời vô hiệu nút Quản lý User
         <a href="#" data-page="user">
             <i class="fas fa-users"></i> Quản lý User
         </a>
-
+        -->
+        
         <a href="#" data-page="report">
             <i class="fas fa-flag"></i> Báo cáo lỗi
         </a>

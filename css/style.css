@@ -3303,3 +3303,7 @@ html {
     text-decoration: none;
 }
 
+/* Ẩn các nút trong community cards */
+#joinForumBtn, #findGroupBtn, #askQuestionBtn {
+    display: none !important;
+}
