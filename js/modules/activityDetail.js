@@ -1,13 +1,14 @@
 // js/modules/activityDetail.js
-import { activityService } from '../services/activity.service.js';
 import { authService } from '../services/auth.service.js';
 import { openAuthModal } from './auth.js';
+
+const API_BASE = "https://studytogether-backend.onrender.com/api";
 
 export async function loadActivityDetail(id) {
     console.log('📅 Loading activity detail for ID:', id);
 
     try {
-        const activity = await activityService.getActivityById(id);
+        const activity = await getActivityById(id);
         if (!activity) {
             toastr.error('Không tìm thấy hoạt động!');
             return;
@@ -28,6 +29,12 @@ export async function loadActivityDetail(id) {
         console.error('❌ Lỗi khi tải hoạt động:', error);
         toastr.error('Không thể tải thông tin hoạt động.');
     }
+}
+
+async function getActivityById(id) {
+    const res = await fetch(`${API_BASE}/activities/${id}`);
+    if (!res.ok) throw new Error('Không thể tải thông tin hoạt động');
+    return res.json();
 }
 
 function renderActivityDetail(activity) {
@@ -86,28 +93,45 @@ function setupBackButton() {
 function setupRegisterButton(activityId) {
     const registerBtn = document.getElementById('registerActivityBtn');
     if (!registerBtn) return;
+
     registerBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         if (!authService.isAuthenticated()) {
             openAuthModal(true);
             return;
         }
+
+        const originalText = registerBtn.innerHTML;
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+
         try {
             const user = authService.getCurrentUser();
             const token = user.token;
-            const res = await fetch(`${activityService.API_BASE}/activities/${activityId}/register`, {
+
+            const res = await fetch(`${API_BASE}/activities/${activityId}/register`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Đăng ký thất bại');
-            toastr.success('Đăng ký thành công!');
+
+            // Đọc response dưới dạng text (vì backend trả về text thuần)
+            const text = await res.text();
+
+            if (!res.ok) {
+                throw new Error(text || 'Đăng ký thất bại');
+            }
+
+            toastr.success(text || 'Đăng ký thành công!');
             // Tải lại chi tiết để cập nhật số lượng
             loadActivityDetail(activityId);
         } catch (error) {
-            toastr.error(error.message);
+            console.error('Lỗi đăng ký:', error);
+            toastr.error(error.message || 'Không thể đăng ký. Vui lòng thử lại sau.');
+        } finally {
+            registerBtn.disabled = false;
+            registerBtn.innerHTML = originalText;
         }
     });
 }
