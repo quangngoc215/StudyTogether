@@ -5,9 +5,19 @@ import { knowledgeService } from '../services/knowledge.service.js';
 import { activityService } from '../services/activity.service.js';
 import { loadActivityDetail } from './activityDetail.js';
 
-/* =====================================================
-   UTIL RENDER
-=====================================================*/
+/**
+ * =====================================================
+ * UTILITIES
+ * =====================================================
+ */
+
+/**
+ * Render danh sách dữ liệu vào container
+ * @param {string} containerId - ID của container
+ * @param {Array} data - Mảng dữ liệu
+ * @param {Function} templateFn - Hàm tạo HTML từ một item
+ * @param {Function} afterRender - Hàm chạy sau khi render (gắn sự kiện)
+ */
 function renderList(containerId, data, templateFn, afterRender) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -15,26 +25,50 @@ function renderList(containerId, data, templateFn, afterRender) {
     if (afterRender) afterRender(container);
 }
 
-/* =====================================================
-   Helper: loại bỏ thẻ HTML, chỉ lấy text
-=====================================================*/
+/**
+ * Loại bỏ thẻ HTML, chỉ lấy text thuần
+ * @param {string} html
+ * @returns {string}
+ */
 function stripHtml(html) {
     if (!html) return '';
     const doc = new DOMParser().parseFromString(html, 'text/html');
     return doc.body.textContent || '';
 }
 
-/* =====================================================
-   CONTENT CARD (từ PostDTO)
-=====================================================*/
+/**
+ * Escape HTML để tránh XSS
+ * @param {string} unsafe
+ * @returns {string}
+ */
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
+ * =====================================================
+ * CARD TEMPLATES
+ * =====================================================
+ */
+
+/**
+ * Tạo HTML cho một thẻ bài viết kiến thức
+ * @param {Object} post
+ * @returns {string}
+ */
 export function createContentCard(post) {
     const image = post.image || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80';
     const wordCount = post.content ? post.content.split(/\s+/).length : 0;
     const readTime = Math.max(1, Math.ceil(wordCount / 200)) + ' phút đọc';
     const date = post.createdAt ? new Date(post.createdAt).toLocaleDateString('vi-VN') : '';
     const category = post.category || 'Kiến thức';
-    
-    // Loại bỏ HTML và cắt ngắn mô tả
+
     const plainText = stripHtml(post.content || '');
     const shortDesc = plainText.substring(0, 120) + (plainText.length > 120 ? '...' : '');
 
@@ -59,45 +93,22 @@ export function createContentCard(post) {
     `;
 }
 
-function escapeHtml(unsafe) {
-    if (!unsafe) return '';
-    return String(unsafe)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function enableContentCardClick(container) {
-    if (!container) return;
-    container.addEventListener('click', e => {
-        if (e.target.closest('.btn-read-more')) return;
-        const card = e.target.closest('.feature-card');
-        if (!card) return;
-        const id = card.dataset.id;
-        if (!id) return;
-        card.classList.add('card-clicked');
-        setTimeout(() => card.classList.remove('card-clicked'), 150);
-        loadPostDetail(id);
-    });
-}
-
-/* =====================================================
-   ACTIVITY CARD (sử dụng dữ liệu từ API)
-=====================================================*/
+/**
+ * Tạo HTML cho một thẻ hoạt động
+ * @param {Object} activity
+ * @returns {string}
+ */
 export function createActivityCard(activity) {
     const startDate = new Date(activity.startDate);
     const endDate = new Date(activity.endDate);
     const dateStr = startDate.toLocaleDateString('vi-VN');
-    const timeStr = startDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + 
-                    (endDate ? ' - ' + endDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
-    
+    const timeStr = startDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) +
+        (endDate ? ' - ' + endDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
+
     const isUpcoming = activity.status === 'UPCOMING';
     const buttonText = isUpcoming ? 'Sắp diễn ra' : (activity.status === 'ONGOING' ? 'Đang diễn ra' : 'Đã kết thúc');
     const buttonClass = isUpcoming ? 'btn-primary' : 'btn-outline';
 
-    // Loại bỏ HTML khỏi mô tả để hiển thị tóm tắt
     const plainDescription = stripHtml(activity.description || '');
     const shortDesc = plainDescription.substring(0, 150) + (plainDescription.length > 150 ? '...' : '');
 
@@ -131,22 +142,11 @@ export function createActivityCard(activity) {
     `;
 }
 
-function enableActivityCardClick(container) {
-    if (!container) return;
-    container.addEventListener('click', e => {
-        const card = e.target.closest('.activity-card');
-        if (!card) return;
-        const id = card.dataset.id;
-        if (!id) return;
-        card.classList.add('card-clicked');
-        setTimeout(() => card.classList.remove('card-clicked'), 150);
-        loadActivityDetail(id);
-    });
-}
-
-/* =====================================================
-   FORUM POST (giữ nguyên)
-=====================================================*/
+/**
+ * Tạo HTML cho một bài viết diễn đàn (dữ liệu mẫu)
+ * @param {Object} post
+ * @returns {string}
+ */
 export function createForumPost(post) {
     const categoryIcons = {
         study: 'fa-book',
@@ -197,9 +197,56 @@ export function createForumPost(post) {
     `;
 }
 
-/* =====================================================
-   RENDER FUNCTIONS
-=====================================================*/
+/**
+ * =====================================================
+ * EVENT HANDLERS
+ * =====================================================
+ */
+
+/**
+ * Gắn sự kiện click cho các thẻ kiến thức
+ * @param {HTMLElement} container
+ */
+function enableContentCardClick(container) {
+    if (!container) return;
+    container.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-read-more')) return;
+        const card = e.target.closest('.feature-card');
+        if (!card) return;
+        const id = card.dataset.id;
+        if (!id) return;
+        card.classList.add('card-clicked');
+        setTimeout(() => card.classList.remove('card-clicked'), 150);
+        loadPostDetail(id);
+    });
+}
+
+/**
+ * Gắn sự kiện click cho các thẻ hoạt động
+ * @param {HTMLElement} container
+ */
+function enableActivityCardClick(container) {
+    if (!container) return;
+    container.addEventListener('click', (e) => {
+        const card = e.target.closest('.activity-card');
+        if (!card) return;
+        const id = card.dataset.id;
+        if (!id) return;
+        card.classList.add('card-clicked');
+        setTimeout(() => card.classList.remove('card-clicked'), 150);
+        loadActivityDetail(id);
+    });
+}
+
+/**
+ * =====================================================
+ * RENDER FUNCTIONS
+ * =====================================================
+ */
+
+/**
+ * Render nội dung nổi bật (3 bài đầu)
+ */
 export async function renderFeaturedContent() {
     const container = document.getElementById('featured-content');
     if (!container) return;
@@ -214,20 +261,56 @@ export async function renderFeaturedContent() {
     }
 }
 
-export async function renderKnowledgeContent(page = 0) {
+export async function renderKnowledgeContent() {
     const container = document.getElementById('knowledge-content');
     if (!container) return;
     container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
     try {
-        const data = await knowledgeService.getKnowledgePosts(page, 10);
+        const data = await knowledgeService.getKnowledgePosts(0, 100);
         const posts = data.content || [];
-        renderList('knowledge-content', posts, createContentCard, enableContentCardClick);
+
+        if (posts.length === 0) {
+            container.innerHTML = '<p class="empty-state">Chưa có bài viết nào.</p>';
+            return;
+        }
+
+        // Nhóm theo category
+        const grouped = posts.reduce((acc, post) => {
+            const cat = post.category || 'Khác';
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(post);
+            return acc;
+        }, {});
+
+        const sortedCategories = Object.keys(grouped).sort();
+
+        let html = '';
+        for (const category of sortedCategories) {
+            const categoryPosts = grouped[category];
+            html += `<div class="category-wrapper">`;  // Khung bao bọc
+            html += `<h3 class="category-title">${escapeHtml(category)}</h3>`;
+            html += `<div class="features" data-category="${category}">`;
+            categoryPosts.forEach(post => {
+                html += createContentCard(post);
+            });
+            html += `</div>`; // close features
+            html += `</div>`; // close category-wrapper
+        }
+        container.innerHTML = html;
+
+        // Gắn sự kiện click cho từng grid
+        const grids = container.querySelectorAll('.features');
+        grids.forEach(grid => enableContentCardClick(grid));
+
     } catch (error) {
         console.error('❌ Lỗi render knowledge content:', error);
         container.innerHTML = '<p class="empty-state">Không thể tải danh sách bài viết.</p>';
     }
 }
 
+/**
+ * Render danh sách hoạt động
+ */
 export async function renderActivities() {
     const container = document.getElementById('activities-content');
     if (!container) return;
@@ -241,12 +324,21 @@ export async function renderActivities() {
     }
 }
 
+/**
+ * Render bài viết diễn đàn (dữ liệu mẫu)
+ */
 export function renderForumPosts() {
     import('./data.js').then(module => {
         renderList('forum-posts-content', module.sampleData.forumPosts, createForumPost);
+    }).catch(error => {
+        console.error('❌ Lỗi tải dữ liệu diễn đàn:', error);
     });
 }
 
+/**
+ * Render bảng xếp hạng
+ * @param {string} type - Loại xếp hạng (weekly/monthly) – hiện tại không dùng
+ */
 export async function renderRankings(type = 'weekly') {
     const container = document.getElementById('ranking-content');
     if (!container) return;
@@ -273,7 +365,7 @@ export async function renderRankings(type = 'weekly') {
                         return `
                             <tr>
                                 <td class="rank ${rank <= 3 ? `rank-${rank}` : ''}">${rank}</td>
-                                <td>${item.fullName || item.username}</td>
+                                <td>${escapeHtml(item.fullName || item.username)}</td>
                                 <td>${item.totalPoints.toLocaleString()}</td>
                                 <td>${item.quizCount}</td>
                             </tr>
@@ -289,6 +381,9 @@ export async function renderRankings(type = 'weekly') {
     }
 }
 
+/**
+ * Render lịch sử quiz (dữ liệu mẫu)
+ */
 export function renderQuizHistory() {
     import('./data.js').then(module => {
         const container = document.getElementById('quiz-history');
@@ -312,7 +407,7 @@ export function renderQuizHistory() {
                     ${history.map(item => `
                         <tr>
                             <td>${item.date}</td>
-                            <td>${item.topic}</td>
+                            <td>${escapeHtml(item.topic)}</td>
                             <td>${item.score}</td>
                             <td>${item.points}</td>
                         </tr>
@@ -320,9 +415,17 @@ export function renderQuizHistory() {
                 </tbody>
             </table>
         `;
+    }).catch(error => {
+        console.error('❌ Lỗi tải lịch sử quiz:', error);
     });
 }
 
+/**
+ * Animation đếm số (counter)
+ * @param {string} elementId
+ * @param {number} targetValue
+ * @param {number} duration - Thời gian chạy (ms)
+ */
 export function animateCounter(elementId, targetValue, duration = 2000) {
     const element = document.getElementById(elementId);
     if (!element) return;

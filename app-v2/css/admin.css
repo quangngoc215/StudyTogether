@@ -1165,3 +1165,18 @@
     font-size: 0.95rem;
     color: #64748b;
 }
+.badge-pending {
+    background: #f39c12;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+.action-btn.approve-btn {
+    background: #27ae60;
+    color: white;
+}
+.action-btn.reject-btn {
+    background: #e74c3c;
+    color: white;
+}

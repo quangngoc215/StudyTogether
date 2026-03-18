@@ -18,10 +18,8 @@ async function initAdmin() {
     setupRouter();
     setupLogoutWatcher();
 
-    // Ẩn tất cả các section
     hideAllSections();
 
-    // Hiển thị dashboard mặc định
     await loadDashboard();
     showSection('admin-section');
 }
@@ -66,7 +64,6 @@ async function handleRoute(e) {
     const page = link.dataset.page;
 
     try {
-        // Ẩn tất cả các section
         hideAllSections();
 
         switch (page) {
@@ -103,13 +100,22 @@ async function handleRoute(e) {
                 showSection('report-section');
                 break;
 
+            case "approval":
+                const approvalModule = await import('./modules/approval.module.js');
+                if (approvalModule.loadPendingPosts) await approvalModule.loadPendingPosts();
+                else console.warn("loadPendingPosts not found in approval.module.js");
+                showSection('admin-section');
+                break;
+
             default:
                 await loadDashboard();
                 showSection('admin-section');
         }
     } catch (error) {
         console.error(`Lỗi khi load trang ${page}:`, error);
-        toastr.error(`Không thể tải trang ${page}`);
+        if (typeof toastr !== 'undefined') {
+            toastr.error(`Không thể tải trang ${page}`);
+        }
     }
 }
 

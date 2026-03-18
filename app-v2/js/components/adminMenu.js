@@ -36,6 +36,10 @@ export function renderAdminMenu() {
             <i class="fas fa-flag"></i> Báo cáo lỗi
         </a>
 
+        <a href="#" data-page="approval">
+            <i class="fas fa-clipboard-check"></i> Duyệt bài viết
+        </a>
+
         <hr/>
     `;
 
