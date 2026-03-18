@@ -92,9 +92,8 @@ export async function handleAuth(event) {
 
             if (user?.role === 'admin') {
                 console.log('Admin detected, redirecting...');
-                // Thử dùng window.location trực tiếp nếu cần
-                window.location.href = '/app-v2/admin.html';
-                // redirect("app-v2/admin.html");
+                // Sử dụng hàm redirect để đảm bảo đường dẫn đúng với base path
+                redirect("app-v2/admin.html");
             } else {
                 console.log('Regular user, staying on main page');
             }

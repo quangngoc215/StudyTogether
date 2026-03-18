@@ -96,7 +96,8 @@ function injectAdminButton() {
     if (document.getElementById("adminPanelBtn")) return;
 
     const adminLink = document.createElement("a");
-    adminLink.href = "./app-v2/admin.html"; // đường dẫn tới admin
+    // Sử dụng đường dẫn tương đối từ thư mục gốc (phù hợp với GitHub Pages)
+    adminLink.href = "./app-v2/admin.html";
     adminLink.id = "adminPanelBtn";
     adminLink.innerHTML = `
         <i class="fas fa-shield-alt"></i>
@@ -115,7 +116,9 @@ function redirectIfAdmin() {
     // Nếu là admin và không phải đang ở trang admin (app-v2) thì chuyển hướng
     if (user && user.role === "admin" && !window.location.pathname.includes("app-v2")) {
         console.log("Admin detected, redirecting to admin panel");
-        window.location.href = "./app-v2/admin.html";
+        // Đường dẫn tuyệt đối từ gốc website (đảm bảo chính xác với base path)
+        const basePath = window.location.pathname.includes("/StudyTogether/") ? "/StudyTogether" : "";
+        window.location.href = basePath + "/app-v2/admin.html";
     } else {
         console.log("Not redirecting. role:", user?.role, "path:", window.location.pathname);
     }
