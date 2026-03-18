@@ -1,7 +1,9 @@
 // js/modules/ui.js
 import { loadPostDetail } from './postDetail.js';
 import { quizService } from '../services/quiz.service.js';
-import { knowledgeService } from '../services/knowledge.service.js'; // Thay vì postService
+import { knowledgeService } from '../services/knowledge.service.js';
+import { activityService } from '../services/activity.service.js'; // Thêm import
+import { loadActivityDetail } from './activityDetail.js';
 
 /* =====================================================
    UTIL RENDER
@@ -69,38 +71,68 @@ function enableContentCardClick(container) {
     });
 }
 
+/* =====================================================
+   ACTIVITY CARD (sử dụng dữ liệu từ API)
+=====================================================*/
 export function createActivityCard(activity) {
-    const isUpcoming = activity.status === 'Đã diễn ra';
+    // Format ngày giờ từ startDate và endDate
+    const startDate = new Date(activity.startDate);
+    const endDate = new Date(activity.endDate);
+    const dateStr = startDate.toLocaleDateString('vi-VN');
+    const timeStr = startDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + 
+                    (endDate ? ' - ' + endDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
+    
+    // Xác định trạng thái và text cho nút
+    const isUpcoming = activity.status === 'UPCOMING';
+    const buttonText = isUpcoming ? 'Sắp diễn ra' : (activity.status === 'ONGOING' ? 'Đang diễn ra' : 'Đã kết thúc');
+    const buttonClass = isUpcoming ? 'btn-primary' : 'btn-outline';
+
     return `
-        <div class="activity-card">
+        <div class="activity-card" data-id="${activity.id}">
             <div class="activity-header">
-                <h3>${activity.title}</h3>
+                <h3>${escapeHtml(activity.title)}</h3>
                 <div class="activity-date">
-                    ${activity.date} | ${activity.time}
+                    ${dateStr} | ${timeStr}
                 </div>
             </div>
             <div class="activity-body">
-                <p>${activity.description}</p>
+                <p>${escapeHtml(activity.description.substring(0, 150))}...</p>
                 <div class="activity-details">
                     <div class="activity-detail">
                         <i class="fas fa-map-marker-alt"></i>
-                        <span>${activity.location}</span>
+                        <span>${escapeHtml(activity.location)}</span>
                     </div>
                     <div class="activity-detail">
                         <i class="fas fa-users"></i>
-                        <span>${activity.participants} người tham gia</span>
+                        <span>${activity.currentParticipants} / ${activity.maxParticipants} người tham gia</span>
                     </div>
                 </div>
             </div>
             <div class="activity-actions">
-                <button class="btn ${isUpcoming ? 'btn-primary' : 'btn-outline'}" data-id="${activity.id}">
-                    ${isUpcoming ? 'Đã diễn ra' : 'Đã diễn ra'}
+                <button class="btn ${buttonClass}" data-id="${activity.id}">
+                    ${buttonText}
                 </button>
             </div>
         </div>
     `;
 }
 
+function enableActivityCardClick(container) {
+    if (!container) return;
+    container.addEventListener('click', e => {
+        const card = e.target.closest('.activity-card');
+        if (!card) return;
+        const id = card.dataset.id;
+        if (!id) return;
+        card.classList.add('card-clicked');
+        setTimeout(() => card.classList.remove('card-clicked'), 150);
+        loadActivityDetail(id);
+    });
+}
+
+/* =====================================================
+   FORUM POST (giữ nguyên)
+=====================================================*/
 export function createForumPost(post) {
     const categoryIcons = {
         study: 'fa-book',
@@ -152,14 +184,13 @@ export function createForumPost(post) {
 }
 
 /* =====================================================
-   RENDER FUNCTIONS (sử dụng knowledgeService)
+   RENDER FUNCTIONS
 =====================================================*/
 export async function renderFeaturedContent() {
     const container = document.getElementById('featured-content');
     if (!container) return;
     container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
     try {
-        // Lấy 3 bài viết kiến thức đầu tiên
         const data = await knowledgeService.getKnowledgePosts(0, 3);
         const featured = data.content || [];
         renderList('featured-content', featured, createContentCard, enableContentCardClick);
@@ -177,18 +208,24 @@ export async function renderKnowledgeContent(page = 0) {
         const data = await knowledgeService.getKnowledgePosts(page, 10);
         const posts = data.content || [];
         renderList('knowledge-content', posts, createContentCard, enableContentCardClick);
-        // Nếu cần phân trang, xử lở thêm
     } catch (error) {
         console.error('❌ Lỗi render knowledge content:', error);
         container.innerHTML = '<p class="empty-state">Không thể tải danh sách bài viết.</p>';
     }
 }
 
-// Các hàm render khác giữ nguyên (vẫn dùng sampleData tạm thời)
-export function renderActivities() {
-    import('./data.js').then(module => {
-        renderList('activities-content', module.sampleData.activitiesContent, createActivityCard);
-    });
+// Render danh sách hoạt động từ API
+export async function renderActivities() {
+    const container = document.getElementById('activities-content');
+    if (!container) return;
+    container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
+    try {
+        const activities = await activityService.getAllActivities();
+        renderList('activities-content', activities, createActivityCard, enableActivityCardClick);
+    } catch (error) {
+        console.error('❌ Lỗi tải hoạt động:', error);
+        container.innerHTML = '<p class="empty-state">Không thể tải danh sách hoạt động.</p>';
+    }
 }
 
 export function renderForumPosts() {
@@ -198,7 +235,7 @@ export function renderForumPosts() {
 }
 
 /* =====================================================
-   RANKING - Gọi API từ backend (giữ nguyên)
+   RANKING - Gọi API từ backend
 =====================================================*/
 export async function renderRankings(type = 'weekly') {
     const container = document.getElementById('ranking-content');
