@@ -1,12 +1,12 @@
 // js/modules/quiz.js
 import { quizService } from '../services/quiz.service.js';
 import { authService } from '../services/auth.service.js';
-import { sampleData } from './data.js';
 
 const API_BASE = "https://studytogether-backend.onrender.com/api";
 
 let currentQuiz = null;
 let currentQuizAnswers = {};
+let currentQuestionIndex = 0; // Chỉ số câu hỏi hiện tại
 let timerInterval = null;
 
 /* ===============================
@@ -27,8 +27,9 @@ export async function startQuiz() {
             return;
         }
         currentQuizAnswers = {};
+        currentQuestionIndex = 0;
         updateUIBeforeQuiz();
-        renderQuizQuestions();
+        renderQuizInterface();
     } catch (error) {
         console.error('❌ Lỗi khi lấy quiz:', error);
         toastr.error('Không thể tải quiz. Vui lòng thử lại sau.');
@@ -40,6 +41,7 @@ export function closeQuiz() {
     resetUIAfterQuiz();
     currentQuiz = null;
     currentQuizAnswers = {};
+    currentQuestionIndex = 0;
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
@@ -47,38 +49,31 @@ export function closeQuiz() {
 }
 
 export function renderQuizQuestions() {
-    const quiz = currentQuiz || sampleData?.dailyQuiz;
-    if (!quiz) {
-        console.error('Không có dữ liệu quiz');
-        return;
-    }
-    renderQuizQuestionsFromData(quiz);
+    console.warn('renderQuizQuestions đã được thay thế bởi renderQuizInterface');
 }
 
 export function showQuizResult(result) {
     const container = document.getElementById('quizResult');
-    const submitBtn = document.getElementById('submitQuizBtn');
+    const quizContainer = document.getElementById('quizQuestions');
     if (!container) return;
 
-    if (submitBtn) submitBtn.style.display = 'none';
+    if (quizContainer) quizContainer.style.display = 'none';
+    container.style.display = 'block';
 
     const percentage = result.percentage || Math.round((result.score / result.totalQuestions) * 100);
     const pointsEarned = result.pointsEarned || result.score * 10;
 
     container.innerHTML = buildResultHTML(result, percentage, pointsEarned);
     attachResultEvents();
-    container.style.display = 'block';
     container.classList.add('fade-in');
 }
 
 export function resetQuizAnswers() {
     currentQuizAnswers = {};
-    const submitBtn = document.getElementById('submitQuizBtn');
-    if (submitBtn) {
-        submitBtn.style.display = 'inline-block';
-        submitBtn.classList.remove('pulse-animation');
+    currentQuestionIndex = 0;
+    if (currentQuiz) {
+        renderQuizInterface();
     }
-    document.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('selected'));
 }
 
 export function updateStatsAfterQuiz(result) {
@@ -173,61 +168,71 @@ function resetUIAfterQuiz() {
     if (closeBtn) closeBtn.style.display = 'none';
 }
 
-function renderQuizQuestionsFromData(quiz) {
+function renderQuizInterface() {
     const container = document.getElementById('quizQuestions');
-    if (!container || !quiz) return;
+    if (!container || !currentQuiz) return;
 
-    const questions = quiz.questions || [];
+    const questions = currentQuiz.questions || [];
     const totalQuestions = questions.length;
 
-    let questionsHtml = '';
-    questions.forEach((q, index) => {
-        const questionId = q.id || `q${index + 1}`;
-        let optionsHtml = '';
-        if (q.options && Array.isArray(q.options)) {
-            q.options.forEach((option, optIndex) => {
-                const optionLetter = String.fromCharCode(65 + optIndex);
-                optionsHtml += `
-                    <div class="quiz-option" data-question="${questionId}" data-answer="${optIndex}">
-                        <span class="option-letter">${optionLetter}</span>
-                        <span class="option-text">${escapeHtml(option) || ''}</span>
-                    </div>
-                `;
-            });
-        }
-        questionsHtml += `
-            <div class="quiz-question-card" data-id="${questionId}">
-                <div class="question-header">
-                    <span class="question-number">Câu ${index + 1}/${totalQuestions}</span>
+    let leftColumnHtml = '<div class="quiz-left-column">';
+    leftColumnHtml += '<h3>Danh sách câu hỏi</h3>';
+    leftColumnHtml += '<div class="question-grid">';
+    for (let i = 0; i < totalQuestions; i++) {
+        const q = questions[i];
+        const qId = q.id || `q${i + 1}`;
+        const isAnswered = currentQuizAnswers[qId] !== undefined;
+        const isActive = i === currentQuestionIndex;
+        const answeredClass = isAnswered ? 'answered' : '';
+        const activeClass = isActive ? 'active' : '';
+        leftColumnHtml += `<div class="question-box ${answeredClass} ${activeClass}" data-index="${i}" data-id="${qId}">Câu ${i + 1}</div>`;
+    }
+    leftColumnHtml += '</div></div>';
+
+    const currentQ = questions[currentQuestionIndex];
+    const currentQId = currentQ.id || `q${currentQuestionIndex + 1}`;
+    let rightColumnHtml = '<div class="quiz-right-column">';
+    rightColumnHtml += `<div class="current-question-header">Câu ${currentQuestionIndex + 1}/${totalQuestions}</div>`;
+    rightColumnHtml += `<h3 class="current-question-title">${escapeHtml(currentQ.content || currentQ.question || '')}</h3>`;
+    rightColumnHtml += '<div class="current-options">';
+    if (currentQ.options && Array.isArray(currentQ.options)) {
+        currentQ.options.forEach((option, optIndex) => {
+            const optionLetter = String.fromCharCode(65 + optIndex);
+            const isSelected = currentQuizAnswers[currentQId] === optIndex;
+            const selectedClass = isSelected ? 'selected' : '';
+            rightColumnHtml += `
+                <div class="quiz-option ${selectedClass}" data-question="${currentQId}" data-answer="${optIndex}">
+                    <span class="option-letter">${optionLetter}</span>
+                    <span class="option-text">${escapeHtml(option) || ''}</span>
                 </div>
-                <h3 class="question-title">${escapeHtml(q.content || q.question || '')}</h3>
-                <div class="quiz-options-container">
-                    ${optionsHtml}
-                </div>
-            </div>
-        `;
-    });
+            `;
+        });
+    }
+    rightColumnHtml += '</div>';
+    rightColumnHtml += '</div>';
 
     container.innerHTML = `
         <div class="quiz-header">
             <div class="quiz-header-top">
-                <h2 class="quiz-main-title">${escapeHtml(quiz.title || 'Quiz')}</h2>
+                <h2 class="quiz-main-title">${escapeHtml(currentQuiz.title || 'Quiz')}</h2>
                 <button class="btn-close-quiz" id="closeQuizBtn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            ${quiz.description ? `<p class="quiz-description">${escapeHtml(quiz.description)}</p>` : ''}
-            <div class="quiz-progress-info">
-                <span><i class="fas fa-list"></i> ${totalQuestions} câu hỏi</span>
-                <span><i class="fas fa-star"></i> ${totalQuestions * 10} điểm tối đa</span>
-            </div>
+            ${currentQuiz.description ? `<p class="quiz-description">${escapeHtml(currentQuiz.description)}</p>` : ''}
         </div>
-        <div class="quiz-questions-container">
-            ${questionsHtml}
+        <div class="quiz-split-layout">
+            ${leftColumnHtml}
+            ${rightColumnHtml}
+        </div>
+        <div class="quiz-navigation">
+            <button id="prevQuestionBtn" class="btn btn-outline" ${currentQuestionIndex === 0 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i> Câu trước</button>
+            <button id="nextQuestionBtn" class="btn btn-outline" ${currentQuestionIndex === totalQuestions - 1 ? 'disabled' : ''}>Câu sau <i class="fas fa-chevron-right"></i></button>
         </div>
     `;
 
     attachQuizEvents();
+    attachNavigationEvents();
 
     const closeQuizBtn = document.getElementById('closeQuizBtn');
     if (closeQuizBtn) closeQuizBtn.addEventListener('click', closeQuiz);
@@ -240,10 +245,49 @@ function attachQuizEvents() {
         option.addEventListener('click', handleQuizOptionClick);
     });
 
+    const questionBoxes = document.querySelectorAll('.question-box');
+    questionBoxes.forEach(box => {
+        box.removeEventListener('click', handleQuestionBoxClick);
+        box.addEventListener('click', handleQuestionBoxClick);
+    });
+
     const submitBtn = document.getElementById('submitQuizBtn');
     if (submitBtn && !submitBtn.hasAttribute('data-listener')) {
         submitBtn.setAttribute('data-listener', 'true');
         submitBtn.addEventListener('click', handleSubmit);
+    }
+}
+
+function attachNavigationEvents() {
+    const prevBtn = document.getElementById('prevQuestionBtn');
+    const nextBtn = document.getElementById('nextQuestionBtn');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuizInterface();
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const total = currentQuiz.questions.length;
+            if (currentQuestionIndex < total - 1) {
+                currentQuestionIndex++;
+                renderQuizInterface();
+            }
+        });
+    }
+}
+
+function handleQuestionBoxClick(e) {
+    const box = e.currentTarget;
+    const index = parseInt(box.dataset.index);
+    if (!isNaN(index) && index !== currentQuestionIndex) {
+        currentQuestionIndex = index;
+        renderQuizInterface();
     }
 }
 
@@ -252,15 +296,19 @@ function handleQuizOptionClick(e) {
     const questionId = element.dataset.question;
     const answerId = parseInt(element.dataset.answer);
 
-    document.querySelectorAll(`.quiz-option[data-question="${questionId}"]`)
-        .forEach(opt => opt.classList.remove('selected'));
-
-    element.classList.add('selected');
-    element.style.animation = 'optionPulse 0.3s ease';
-
     currentQuizAnswers[questionId] = answerId;
 
-    const totalQuestions = (currentQuiz || sampleData?.dailyQuiz)?.questions?.length || 0;
+    document.querySelectorAll(`.quiz-option[data-question="${questionId}"]`).forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    element.classList.add('selected');
+
+    const questionBox = document.querySelector(`.question-box[data-id="${questionId}"]`);
+    if (questionBox) {
+        questionBox.classList.add('answered');
+    }
+
+    const totalQuestions = currentQuiz.questions.length;
     const answeredCount = Object.keys(currentQuizAnswers).length;
     const submitBtn = document.getElementById('submitQuizBtn');
     if (submitBtn) {
@@ -275,7 +323,7 @@ function handleQuizOptionClick(e) {
 async function handleSubmit(e) {
     e.preventDefault();
 
-    const quiz = currentQuiz || sampleData?.dailyQuiz;
+    const quiz = currentQuiz;
     if (!quiz) {
         toastr.error('Không có quiz nào đang làm!');
         return;
@@ -293,51 +341,30 @@ async function handleSubmit(e) {
     submitBtn.disabled = true;
 
     try {
-        let result;
-        if (currentQuiz) {
-            const answersToSend = {};
-            currentQuiz.questions.forEach((q, idx) => {
-                const qId = q.id || `q${idx + 1}`;
-                const answerIndex = currentQuizAnswers[qId];
-                if (answerIndex !== undefined && q.options && q.options[answerIndex]) {
-                    answersToSend[qId] = q.options[answerIndex];
-                }
-            });
-            result = await quizService.submitQuiz(currentQuiz.id, answersToSend, 0);
-
-            if (result.counted) {
-                const user = authService.getCurrentUser();
-                if (user) {
-                    const newPoints = (user.points || 0) + (result.pointsEarned || 0);
-                    authService.updatePoints(newPoints);
-                }
+        const answersToSend = {};
+        quiz.questions.forEach((q, idx) => {
+            const qId = q.id || `q${idx + 1}`;
+            const answerIndex = currentQuizAnswers[qId];
+            if (answerIndex !== undefined && q.options && q.options[answerIndex]) {
+                answersToSend[qId] = q.options[answerIndex];
             }
-        } else {
-            let score = 0;
-            quiz.questions.forEach((q, index) => {
-                const questionId = q.id || `q${index + 1}`;
-                const userAnswer = currentQuizAnswers[questionId];
-                if (userAnswer !== undefined && userAnswer === q.correctAnswer) {
-                    score++;
-                }
-            });
-            result = {
-                score,
-                totalQuestions: quiz.questions.length,
-                percentage: Math.round((score / quiz.questions.length) * 100),
-                pointsEarned: score * 10,
-                counted: true
-            };
+        });
+        const result = await quizService.submitQuiz(quiz.id, answersToSend, 0);
+
+        if (result.counted) {
+            const user = authService.getCurrentUser();
+            if (user) {
+                const newPoints = (user.points || 0) + (result.pointsEarned || 0);
+                authService.updatePoints(newPoints);
+            }
         }
 
         showQuizResult(result);
 
-        // Gọi AI Coach nếu có câu sai
         if (result.details && result.details.some(d => !d.correct)) {
             await fetchAIAdvice(result.details);
         }
 
-        // Hiển thị thông báo
         if (result.counted) {
             toastr.success(`✅ Bạn đã đạt ${result.score}/${result.totalQuestions} điểm! (+${result.pointsEarned} điểm)`);
         } else {
@@ -362,10 +389,9 @@ async function handleSubmit(e) {
 }
 
 /* ===============================
-   AI COACH FUNCTIONS
+   AI COACH FUNCTIONS (SỬA)
 ================================= */
 
-// Hiển thị loading khi chờ AI
 function showAILoading() {
     let aiBox = document.getElementById('ai-advice-box');
     if (!aiBox) {
@@ -387,13 +413,11 @@ function showAILoading() {
     `;
 }
 
-// Ẩn loading (xóa box)
 function hideAILoading() {
     const aiBox = document.getElementById('ai-advice-box');
     if (aiBox) aiBox.remove();
 }
 
-// Hiển thị lỗi
 function showAIError(message) {
     let aiBox = document.getElementById('ai-advice-box');
     if (!aiBox) {
@@ -410,58 +434,21 @@ function showAIError(message) {
     aiBox.innerHTML = `<p class="error-message">⚠️ ${message}</p>`;
 }
 
-// Chuyển đổi markdown cơ bản sang HTML
-function markdownToHtml(text) {
+// Hàm chuyển đổi markdown đơn giản thành HTML (giữ nguyên, nhưng nếu cần có thể bỏ qua)
+function simpleMarkdownToHtml(text) {
     if (!text) return '';
-    
-    // Escape HTML trước để tránh XSS
-    text = escapeHtml(text);
-    
-    // Tách thành các dòng
-    let lines = text.split('\n');
-    let inList = false;
-    let html = '';
-    
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i];
-        let trimmed = line.trim();
-        
-        // Xử lý in đậm và nghiêng trong dòng
-        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        line = line.replace(/\*(?!\*)(.*?)\*(?!\*)/g, '<em>$1</em>');
-        
-        // Kiểm tra danh sách
-        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-            let content = trimmed.substring(2).trim();
-            // Xử lý lại markdown trong content (đề phòng)
-            content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                             .replace(/\*(?!\*)(.*?)\*(?!\*)/g, '<em>$1</em>');
-            if (!inList) {
-                html += '<ul>';
-                inList = true;
-            }
-            html += `<li>${content}</li>`;
-        } else {
-            if (inList) {
-                html += '</ul>';
-                inList = false;
-            }
-            if (line.trim() === '') {
-                html += '<br>';
-            } else {
-                html += `<p>${line}</p>`;
-            }
-        }
-    }
-    if (inList) {
-        html += '</ul>';
-    }
-    
+    // Chỉ xử lý in đậm và xuống dòng, bỏ qua list phức tạp để tránh lỗi
+    let html = escapeHtml(text);
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    html = html.replace(/\n/g, '<br>');
     return html;
 }
 
-// Hiển thị lời khuyên AI
 function showAIAdvice(advice) {
+    console.log('AI advice raw (length):', advice.length);
+    console.log('AI advice content:', advice);
+
     let aiBox = document.getElementById('ai-advice-box');
     if (!aiBox) {
         aiBox = document.createElement('div');
@@ -474,13 +461,13 @@ function showAIAdvice(advice) {
             document.getElementById('quizResult').appendChild(aiBox);
         }
     }
+    // Sử dụng simpleMarkdownToHtml để hiển thị, đảm bảo không bị cắt
     aiBox.innerHTML = `
         <h4><i class="fas fa-robot"></i> Gợi ý ôn tập từ AI</h4>
-        <div class="ai-advice-content">${markdownToHtml(advice)}</div>
+        <div class="ai-advice-content">${simpleMarkdownToHtml(advice)}</div>
     `;
 }
 
-// Gọi API AI Coach
 async function fetchAIAdvice(details) {
     try {
         const mistakes = details
@@ -530,6 +517,7 @@ async function fetchAIAdvice(details) {
 ================================= */
 
 function buildResultHTML(result, percentage, pointsEarned) {
+    // ... (giữ nguyên như cũ)
     let detailsHtml = '';
     let mistakeListHtml = '';
 
@@ -639,7 +627,12 @@ function attachResultEvents() {
     if (retryBtn) {
         retryBtn.addEventListener('click', () => {
             resetQuizAnswers();
-            renderQuizQuestions();
+            // Sau khi reset, cần hiển thị lại quiz interface
+            if (currentQuiz) {
+                renderQuizInterface();
+            } else {
+                startQuiz(); // fallback
+            }
         });
     }
 }
