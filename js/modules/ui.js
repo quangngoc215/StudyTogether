@@ -2,7 +2,7 @@
 import { loadPostDetail } from './postDetail.js';
 import { quizService } from '../services/quiz.service.js';
 import { knowledgeService } from '../services/knowledge.service.js';
-import { activityService } from '../services/activity.service.js'; // Thêm import
+import { activityService } from '../services/activity.service.js';
 import { loadActivityDetail } from './activityDetail.js';
 
 /* =====================================================
@@ -16,6 +16,15 @@ function renderList(containerId, data, templateFn, afterRender) {
 }
 
 /* =====================================================
+   Helper: loại bỏ thẻ HTML, chỉ lấy text
+=====================================================*/
+function stripHtml(html) {
+    if (!html) return '';
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+}
+
+/* =====================================================
    CONTENT CARD (từ PostDTO)
 =====================================================*/
 export function createContentCard(post) {
@@ -24,7 +33,10 @@ export function createContentCard(post) {
     const readTime = Math.max(1, Math.ceil(wordCount / 200)) + ' phút đọc';
     const date = post.createdAt ? new Date(post.createdAt).toLocaleDateString('vi-VN') : '';
     const category = post.category || 'Kiến thức';
-    const shortDesc = post.content ? post.content.substring(0, 120) + '...' : '';
+    
+    // Loại bỏ HTML và cắt ngắn mô tả
+    const plainText = stripHtml(post.content || '');
+    const shortDesc = plainText.substring(0, 120) + (plainText.length > 120 ? '...' : '');
 
     return `
         <div class="feature-card" data-id="${post.id}">
@@ -75,17 +87,19 @@ function enableContentCardClick(container) {
    ACTIVITY CARD (sử dụng dữ liệu từ API)
 =====================================================*/
 export function createActivityCard(activity) {
-    // Format ngày giờ từ startDate và endDate
     const startDate = new Date(activity.startDate);
     const endDate = new Date(activity.endDate);
     const dateStr = startDate.toLocaleDateString('vi-VN');
     const timeStr = startDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + 
                     (endDate ? ' - ' + endDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
     
-    // Xác định trạng thái và text cho nút
     const isUpcoming = activity.status === 'UPCOMING';
     const buttonText = isUpcoming ? 'Sắp diễn ra' : (activity.status === 'ONGOING' ? 'Đang diễn ra' : 'Đã kết thúc');
     const buttonClass = isUpcoming ? 'btn-primary' : 'btn-outline';
+
+    // Loại bỏ HTML khỏi mô tả để hiển thị tóm tắt
+    const plainDescription = stripHtml(activity.description || '');
+    const shortDesc = plainDescription.substring(0, 150) + (plainDescription.length > 150 ? '...' : '');
 
     return `
         <div class="activity-card" data-id="${activity.id}">
@@ -96,7 +110,7 @@ export function createActivityCard(activity) {
                 </div>
             </div>
             <div class="activity-body">
-                <p>${escapeHtml(activity.description.substring(0, 150))}...</p>
+                <p>${escapeHtml(shortDesc)}</p>
                 <div class="activity-details">
                     <div class="activity-detail">
                         <i class="fas fa-map-marker-alt"></i>
@@ -214,7 +228,6 @@ export async function renderKnowledgeContent(page = 0) {
     }
 }
 
-// Render danh sách hoạt động từ API
 export async function renderActivities() {
     const container = document.getElementById('activities-content');
     if (!container) return;
@@ -234,9 +247,6 @@ export function renderForumPosts() {
     });
 }
 
-/* =====================================================
-   RANKING - Gọi API từ backend
-=====================================================*/
 export async function renderRankings(type = 'weekly') {
     const container = document.getElementById('ranking-content');
     if (!container) return;
