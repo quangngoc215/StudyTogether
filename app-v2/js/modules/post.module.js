@@ -74,9 +74,7 @@ export async function loadPosts() {
             </div>
         `;
 
-        // Gắn sự kiện với ID mới
         document.getElementById("adminCreatePostBtn").addEventListener("click", showCreatePostModal);
-
         document.querySelectorAll(".delete-btn").forEach(btn => {
             btn.addEventListener("click", () => handleDelete(btn.dataset.id));
         });
@@ -87,10 +85,8 @@ export async function loadPosts() {
     }
 }
 
-// ================= MODAL TẠO BÀI VIẾT =================
-function showCreatePostModal(editData = null) {
-    const isEdit = !!editData; // Vẫn giữ tham số nhưng không dùng nút sửa nữa
-    // Xóa modal cũ nếu tồn tại
+// ================= MODAL TẠO BÀI VIẾT (KIẾN THỨC) =================
+function showCreatePostModal() {
     const existingModal = document.getElementById("postModal");
     if (existingModal) existingModal.remove();
 
@@ -100,29 +96,23 @@ function showCreatePostModal(editData = null) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="close-modal">&times;</span>
-            <h2><i class="fas fa-plus-circle"></i> Tạo bài viết mới</h2>
+            <h2><i class="fas fa-plus-circle"></i> Tạo bài viết mới (Kiến thức)</h2>
             <form id="adminPostForm">
                 <div class="form-group">
                     <label for="postTitle">Tiêu đề <span style="color: #e53e3e;">*</span></label>
-                    <input type="text" id="postTitle" placeholder="Nhập tiêu đề bài viết" required>
+                    <input type="text" id="postTitle" name="title" placeholder="Nhập tiêu đề bài viết" required>
                 </div>
                 <div class="form-group">
                     <label for="postCategory">Danh mục</label>
-                    <select id="postCategory">
-                        <option value="" disabled selected>-- Chọn danh mục --</option>
-                        <option value="Kiến thức">Kiến thức</option>
-                        <option value="Kỹ năng mềm">Kỹ năng mềm</option>
-                        <option value="Hoạt động">Hoạt động</option>
-                        <option value="Khác">Khác</option>
-                    </select>
+                    <input type="text" id="postCategory" name="category" placeholder="Ví dụ: Kỹ năng mềm, Lập trình, ...">
                 </div>
                 <div class="form-group">
                     <label for="postContent">Nội dung <span style="color: #e53e3e;">*</span></label>
-                    <textarea id="postContent" rows="8" placeholder="Viết nội dung bài viết..." required></textarea>
+                    <textarea id="postContent" name="content" rows="8" placeholder="Viết nội dung bài viết..." required></textarea>
                 </div>
                 <div class="form-group">
                     <label for="postImage">Ảnh (URL) – không bắt buộc</label>
-                    <input type="url" id="postImage" placeholder="https://...">
+                    <input type="url" id="postImage" name="image" placeholder="https://...">
                 </div>
                 <div class="form-actions">
                     <button type="button" class="admin-btn admin-btn-outline" id="cancelPostBtn">Hủy</button>
@@ -154,10 +144,19 @@ function showCreatePostModal(editData = null) {
         e.preventDefault();
         e.stopPropagation();
 
-        const title = document.getElementById("postTitle").value.trim();
-        const category = document.getElementById("postCategory").value;
-        const content = document.getElementById("postContent").value.trim();
-        const image = document.getElementById("postImage").value.trim() || undefined;
+        // Lấy giá trị từ các input trong form để tránh xung đột ID
+        const titleInput = form.querySelector("#postTitle");
+        const categoryInput = form.querySelector("#postCategory");
+        const contentInput = form.querySelector("#postContent");
+        const imageInput = form.querySelector("#postImage");
+
+        const title = titleInput ? titleInput.value.trim() : "";
+        const category = categoryInput ? categoryInput.value.trim() : "";
+        const content = contentInput ? contentInput.value.trim() : "";
+        const image = imageInput ? imageInput.value.trim() || undefined : undefined;
+
+        // Debug log
+        console.log("Submit post - title:", title, "content length:", content.length);
 
         if (!title || !content) {
             toastr.warning("Vui lòng nhập đầy đủ tiêu đề và nội dung!");
@@ -170,7 +169,13 @@ function showCreatePostModal(editData = null) {
         submitBtn.disabled = true;
 
         try {
-            await createPost({ title, category, content, image });
+            await createPost({
+                title,
+                category: category || "Kiến thức",
+                content,
+                image,
+                type: "article"  // Đảm bảo gửi type article
+            });
             toastr.success("Tạo bài viết thành công!");
             closeModal();
             loadPosts();
@@ -198,7 +203,6 @@ async function handleDelete(id) {
     }
 }
 
-// ================= ESCAPE HTML =================
 function escapeHtml(unsafe) {
     if (!unsafe) return '';
     return String(unsafe)
