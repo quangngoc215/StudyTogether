@@ -1121,35 +1121,55 @@
     }
 }
 
-/* Report Modal */
-.modal-content.large {
-    max-width: 900px;
-    width: 90%;
+/* Report Modal - Mở rộng tối đa */
+#report-modal .modal-content.large {
+    max-width: 95vw;          /* Chiếm 95% chiều rộng màn hình */
+    width: 95vw;
+    margin: 2vh auto;         /* Căn giữa theo chiều dọc */
 }
 
+/* Khu vực nội dung chi tiết */
 #report-detail-content {
-    max-height: 70vh;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 25px !important;  /* Tăng padding cho thoáng */
+    box-sizing: border-box;
+    max-height: 85vh;
     overflow-y: auto;
-    padding-right: 10px;
 }
 
+/* Các phần tử con bên trong chiếm hết chiều ngang */
+#report-detail-content > div {
+    width: 100%;
+    word-break: break-word;    /* Ngắt dòng khi gặp từ/quá dài */
+    overflow-wrap: break-word;
+}
+
+/* Điều chỉnh grid hiển thị thông tin (ID, người báo cáo, ...) */
+#report-detail-content > div[style*="grid"] {
+    grid-template-columns: minmax(120px, auto) 1fr !important; /* Cột label tối thiểu 120px, cột value co giãn */
+    gap: 20px;
+    width: 100%;
+}
+
+/* Các đoạn văn bản dài */
+#report-detail-content p,
+#report-detail-content .report-field {
+    white-space: pre-wrap;     /* Giữ xuống dòng tự nhiên */
+    word-break: break-word;
+}
+
+/* Tiêu đề phụ */
 #report-detail-content h3 {
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-    color: var(--admin-dark);
-    border-bottom: 2px solid var(--admin-primary);
-    padding-bottom: 5px;
+    font-size: 1.3rem;         /* Tăng nhẹ kích thước chữ */
+    margin-bottom: 20px;
 }
 
-#report-detail-content p {
-    margin-bottom: 10px;
-    line-height: 1.6;
-}
-
+/* Nếu có textarea chỉnh sửa */
 #edit-post-content {
-    font-family: monospace;
+    width: 100%;
+    box-sizing: border-box;
     font-size: 14px;
-    resize: vertical;
 }
 
 /* Pagination */
