@@ -157,7 +157,7 @@ function updateProfileUI() {
     }
 
     if (joinDateStat) {
-        joinDateStat.textContent = '2024';
+        joinDateStat.textContent = '2025';
     }
 
     if (activityStat) {
