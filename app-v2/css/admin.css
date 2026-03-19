@@ -1200,3 +1200,316 @@
     background: #e74c3c;
     color: white;
 }
+
+/* ===== POST MANAGEMENT ===== */
+
+/* Container chính */
+#admin-section .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Tiêu đề và nút tạo */
+#admin-section .section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 24px;
+    position: relative;
+    padding-bottom: 12px;
+}
+
+#admin-section .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, #f37021, #ff9c66);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+#admin-section .section-title:hover::after {
+    width: 100px;
+}
+
+/* Nút Tạo bài viết */
+#createBtn.primary-btn {
+    background: linear-gradient(135deg, #f37021, #d95f17);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(243, 112, 33, 0.2);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin-bottom: 24px;
+}
+
+#createBtn.primary-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(243, 112, 33, 0.3);
+}
+
+#createBtn.primary-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Thêm icon cho nút (nếu muốn dùng Font Awesome) */
+#createBtn.primary-btn::before {
+    content: '\f067';  /* mã Unicode của fa-plus */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 0.9rem;
+}
+
+/* Bảng quản lý */
+.admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    margin-top: 10px;
+}
+
+.admin-table thead tr {
+    background: transparent;
+}
+
+.admin-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.admin-table td {
+    padding: 16px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+    vertical-align: middle;
+    border: 1px solid #f1f5f9;
+}
+
+.admin-table tbody tr {
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+.admin-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.admin-table tbody tr:nth-child(2) { animation-delay: 0.1s; }
+.admin-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.admin-table tbody tr:nth-child(4) { animation-delay: 0.2s; }
+.admin-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+/* thêm nếu cần */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.admin-table tbody tr:hover td {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+    border-color: #f37021;
+    background: #fef9f5; /* rất nhạt cam */
+}
+
+/* Nút hành động */
+.edit-btn, .delete-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+}
+
+.edit-btn {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.edit-btn:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.delete-btn:hover {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Thêm icon cho nút (nếu dùng Font Awesome) */
+.edit-btn::before {
+    content: '\f044';  /* fa-pen-to-square */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 400;
+    margin-right: 4px;
+}
+
+.delete-btn::before {
+    content: '\f2ed';  /* fa-trash-alt */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 400;
+    margin-right: 4px;
+}
+
+/* ===== STATUS CARDS (loading/empty/error) ===== */
+.status-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    border-radius: 24px;
+    padding: 30px 35px;
+    margin: 40px 0;
+    box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.05);
+    border-left: 6px solid transparent;
+    animation: slideIn 0.4s ease;
+}
+
+.status-card.info {
+    border-left-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.02);
+}
+
+.status-card.error {
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.02);
+}
+
+.status-icon {
+    font-size: 2.5rem;
+    min-width: 60px;
+    text-align: center;
+}
+
+.status-card p {
+    font-size: 1.1rem;
+    color: #334155;
+    margin: 0;
+    flex: 1;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Empty state */
+.status-card.info .status-icon {
+    filter: drop-shadow(0 4px 6px rgba(59, 130, 246, 0.2));
+}
+
+/* ===== PAGINATION (nếu có thêm sau này) ===== */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.pagination-btn {
+    min-width: 42px;
+    height: 42px;
+    border-radius: 30px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #334155;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: scale(1.05);
+}
+
+.pagination-btn.active {
+    background: #f37021;
+    color: white;
+    border-color: #f37021;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .admin-table th,
+    .admin-table td {
+        padding: 12px 10px;
+        font-size: 0.9rem;
+    }
+
+    .edit-btn, .delete-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        margin-right: 4px;
+    }
+
+    #createBtn.primary-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .status-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 25px;
+    }
+}
