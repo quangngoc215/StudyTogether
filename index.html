@@ -485,34 +485,39 @@
         </div>
     </div>
 
-    <!-- Modal tạo bài viết cộng đồng -->
-    <div class="modal" id="createPostModal">
-        <div class="modal-content">
-            <span class="close-modal" id="closePostModal">&times;</span>
-            <h2>Tạo bài viết mới</h2>
-            <form id="postForm">
-                <div class="form-group">
-                    <label for="postTitle">Tiêu đề:</label>
-                    <input type="text" id="postTitle" placeholder="Nhập tiêu đề bài viết" required>
-                </div>
-                <div class="form-group">
-                    <label for="postCategory">Chuyên mục:</label>
-                    <select id="postCategory">
-                        <option value="study">Học tập</option>
-                        <option value="activity">Hoạt động</option>
-                        <option value="question">Hỏi đáp</option>
-                        <option value="share">Chia sẻ</option>
-                        <option value="other">Khác</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="postContent">Nội dung:</label>
-                    <textarea id="postContent" rows="6" placeholder="Nhập nội dung bài viết..." required></textarea>
-                </div>
-                <button type="submit" class="btn btn-fpt">Đăng bài</button>
-            </form>
-        </div>
+   <!-- Trong index.html, khoảng dòng 400-420 -->
+<div class="modal" id="createPostModal">
+    <div class="modal-content">
+        <span class="close-modal" id="closePostModal">&times;</span>
+        <h2>Tạo bài viết mới</h2>
+        <form id="postForm">
+            <div class="form-group">
+                <label for="postTitle">Tiêu đề:</label>
+                <input type="text" id="postTitle" placeholder="Nhập tiêu đề bài viết" required>
+            </div>
+            <div class="form-group">
+                <label for="postCategory">Chuyên mục:</label>
+                <select id="postCategory">
+                    <option value="study">Học tập</option>
+                    <option value="activity">Hoạt động</option>
+                    <option value="question">Hỏi đáp</option>
+                    <option value="share">Chia sẻ</option>
+                    <option value="other">Khác</option>
+                </select>
+            </div>
+            <!-- Thêm trường ảnh -->
+            <div class="form-group">
+                <label for="postImage">Ảnh (URL) – không bắt buộc</label>
+                <input type="url" id="postImage" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label for="postContent">Nội dung:</label>
+                <textarea id="postContent" rows="6" placeholder="Nhập nội dung bài viết..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-fpt">Đăng bài</button>
+        </form>
     </div>
+</div>
 
     <!-- Footer -->
     <footer id="main-footer">

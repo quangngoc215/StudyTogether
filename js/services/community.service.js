@@ -53,25 +53,24 @@ class CommunityService {
      * @returns {Promise<Object>} - Bài viết vừa tạo
      */
     async createPost(data) {
-        const user = authService.getCurrentUser();
-        if (!user) throw new Error('Bạn cần đăng nhập để thực hiện thao tác này');
+    const user = authService.getCurrentUser();
+    if (!user) throw new Error('Bạn cần đăng nhập để thực hiện thao tác này');
 
-        // Thêm type 'community' vào dữ liệu gửi đi
-        const postData = {
-            ...data,
-            type: 'community'
-        };
+    const postData = {
+        ...data,
+        type: 'community'
+    };
 
-        const res = await fetch(`${API_BASE}/posts`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${user.token}`
-            },
-            body: JSON.stringify(postData)
-        });
-        return this._handleResponse(res);
-    }
+    const res = await fetch(`${API_BASE}/posts`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify(postData)
+    });
+    return this._handleResponse(res);
+}
 
     /**
      * Cập nhật bài viết (yêu cầu đăng nhập và quyền admin/tác giả)

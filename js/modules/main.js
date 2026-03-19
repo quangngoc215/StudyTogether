@@ -206,6 +206,7 @@ function openQuizSection() {
 // =============================
 // XỬ LÝ TẠO BÀI VIẾT (CẬP NHẬT)
 // =============================
+// Trong main.js, hàm handleCreatePost
 async function handleCreatePost(event) {
     event.preventDefault();
 
@@ -219,9 +220,10 @@ async function handleCreatePost(event) {
     const title = document.getElementById('postTitle')?.value.trim();
     const category = document.getElementById('postCategory')?.value;
     const content = document.getElementById('postContent')?.value.trim();
+    const image = document.getElementById('postImage')?.value.trim() || undefined; // Thêm dòng này
 
     if (!title || !content) {
-        toastr.error('Vui lòng nhập đầy đủ thông tin!');
+        toastr.error('Vui lòng nhập đầy đủ tiêu đề và nội dung!');
         return;
     }
 
@@ -237,12 +239,12 @@ async function handleCreatePost(event) {
 
     try {
         console.log('🚀 Đang gửi yêu cầu tạo bài viết...');
-        // Thêm type 'community' vào request
         const newPost = await communityService.createPost({
             title,
             content,
             category,
-            type: 'community'  // Thêm dòng này để xác định bài viết thuộc cộng đồng
+            type: 'community',
+            image // Thêm trường image
         });
         console.log('✅ Tạo bài viết thành công:', newPost);
 
@@ -257,10 +259,7 @@ async function handleCreatePost(event) {
         const postForm = document.getElementById('postForm');
         if (postForm) postForm.reset();
 
-        // Chuyển sang trang cộng đồng - hàm switchSection sẽ tự động gọi loadCommunityPosts
-        console.log('🔄 Chuyển đến community-section...');
         switchSection('community-section');
-        // Không cần gọi loadCommunityPosts ở đây vì đã có trong navigation
 
     } catch (error) {
         console.error('❌ Lỗi khi tạo bài viết:', error);
