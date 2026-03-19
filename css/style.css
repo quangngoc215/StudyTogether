@@ -3307,3 +3307,7 @@ html {
 #joinForumBtn, #findGroupBtn, #askQuestionBtn {
     display: none !important;
 }
+
+#loadMoreActivities {
+    display: none !important;
+}
