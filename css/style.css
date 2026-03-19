@@ -3221,3 +3221,23 @@ html {
 #loadMoreActivities {
     display: none !important;
 }
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pagination-container .btn {
+    min-width: 40px;
+    padding: 8px 16px;
+}
+
+.pagination-container span {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
+    font-weight: 500;
+    color: #555;
+}

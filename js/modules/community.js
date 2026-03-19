@@ -136,7 +136,10 @@ async function handleLike(btn, postId) {
 
 function renderPagination() {
     const paginationContainer = document.getElementById('community-pagination');
-    if (!paginationContainer) return;
+    if (!paginationContainer) {
+        console.warn('⚠️ Không tìm thấy #community-pagination, phân trang sẽ không hiển thị');
+        return;
+    }
     if (totalPages <= 1) {
         paginationContainer.innerHTML = '';
         return;
@@ -180,6 +183,7 @@ function escapeHtml(unsafe) {
         .replace(/'/g, "&#039;");
 }
 
+// Gán vào window để dùng từ các nút phân trang
 window.loadCommunityPosts = loadCommunityPosts;
 
 export default {
